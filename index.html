@@ -318,9 +318,9 @@
         if (!API_URL || API_URL === '請填入你的 Apps Script Web App URL') {
           throw new Error('尚未設定 API_URL');
         }
-
+        debugLoading('initializing LIFF...');
         await liff.init({ liffId: LIFF_ID });
-
+        debugLoading('finish initializing LIFF...');
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
