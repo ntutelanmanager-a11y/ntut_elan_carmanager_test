@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>車輛預約日曆</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #222222;
+      --muted: #666666;
+      --border: #dddddd;
+      --primary: #111111;
+      --secondary: #666666;
+      --danger: #b00020;
+      --ok-bg: #e7f6e7;
+      --ok-text: #146414;
+      --err-bg: #fde8e8;
+      --err-text: #8a1111;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin: 10px 0 4px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 12px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button.secondary {
+      background: var(--secondary);
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 10px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .fc {
+        font-size: 12px;
+      }
+    }
+
+    #calendar {
+      background: #fff;
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .notice {
+      white-space: pre-line;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 12px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .notice.ok {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok-text);
+    }
+
+    .notice.err {
+      display: block;
+      background: var(--err-bg);
+      color: var(--err-text);
+    }
+
+    .selected {
+      background: #f2f2f2;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 8px;
+      font-size: 14px;
+      color: #333;
+      white-space: pre-line;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 24px;
+      font-size: 16px;
+      color: #555;
+    }
+
+    .fc-event {
+      cursor: pointer;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #777;
+      line-height: 1.5;
+    }
+    .fc .fc-toolbar-title {
+      font-size: clamp(8px, 2.5vw, 20px);
+      white-space: nowrap;
+    }
+    
+
+    .fc .fc-toolbar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .fc .fc-toolbar-chunk {
+      flex-shrink: 0;
+    }
+
+    .fc .fc-toolbar-chunk:nth-child(2) {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+    /* 縮小今天按鈕 */
+    .fc .fc-today-button {
+      width: auto !important;
+      min-width: 42px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+    }
+    @media (max-width: 100px) {
+      .fc .fc-today-button {
+        min-width: 36px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        font-size: 12px !important;
+      }
+    }
+    @media (max-width: 30vw) {
+      .fc .fc-toolbar-title {
+        font-size: clamp(6px, 2.5vw, 8px);
+        white-space: nowrap;
+      }
+
+      .fc .fc-header-toolbar {
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="app">
+    <div class="card">
+      <h1>車輛預約日曆</h1>
+      <div class="muted" id="userInfo">
+        正在讀取 LINE 使用者資料...
+      </div>
+    </div>
+
+    <div id="loading" class="card loading">
+      載入中，請稍候...
+    </div>
+
+    <div id="mainContent" style="display:none;">
+      <div class="card">
+        <h2 id="formTitle">新增預約</h2>
+
+        <input type="hidden" id="eventId">
+
+        <div class="row">
+          <div>
+            <label for="startTime">開始時間</label>
+            <input type="datetime-local" id="startTime">
+          </div>
+
+          <div>
+            <label for="endTime">結束時間</label>
+            <input type="datetime-local" id="endTime">
+          </div>
+        </div>
+
+        <label for="purpose">借用目的</label>
+        <textarea id="purpose" placeholder="請輸入借用目的"></textarea>
+
+        <div id="selectedInfo" class="selected" style="display:none;"></div>
+
+        <button id="saveBtn" onclick="saveReservation()">儲存預約</button>
+        <button id="deleteBtn" class="danger" onclick="deleteReservation()" style="display:none;">刪除此預約</button>
+        <button class="secondary" onclick="resetForm()">清空 / 新增另一筆</button>
+
+        <div id="notice" class="notice"></div>
+      </div>
+
+      <div class="card">
+        <div id="calendar"></div>
+        <div class="small">
+          點選空白時段可以快速帶入時間；點選既有預約可以查看詳細資料。只有自己建立的預約可以修改或刪除。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*******************************************************
+     * 請修改這兩個設定
+     *******************************************************/
+    const LIFF_ID = '2006544798-zA1n0LL5';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzv6Rp5y4qRrCOKqWju3T_tA_KonnG3gJAdzN_aLabdkkJiSiRNfjG4gD741hnPMCU9/exec';
+
+    /*******************************************************
+     * Global state
+     *******************************************************/
+    const AUTH = {
+      idToken: ''
+    };
+
+    let calendar;
+    let reservations = [];
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initApp();
+    });
+
+    /*******************************************************
+     * LIFF 初始化
+     *******************************************************/
+    async function initApp() {
+      try {
+        debugLoading('正在初始化 LIFF...');
+
+        if (!LIFF_ID || LIFF_ID === '請填入你的 LIFF ID') {
+          throw new Error('尚未設定 LIFF_ID');
+        }
+
+        if (!API_URL || API_URL === '請填入你的 Apps Script Web App URL') {
+          throw new Error('尚未設定 API_URL');
+        }
+
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const idToken = liff.getIDToken();
+
+        if (!idToken) {
+          throw new Error('無法取得 LINE idToken。請確認 LIFF Scope 有勾選 openid 與 profile。');
+        }
+
+        AUTH.idToken = idToken;
+
+        debugLoading('正在驗證使用者權限...');
+
+        const userResponse = await callApi('getCurrentUser', {});
+        if (!userResponse.ok) {
+          throw new Error(userResponse.error || '使用者驗證失敗');
+        }
+
+        currentUser = userResponse.user;
+
+        document.getElementById('userInfo').innerHTML =
+          '使用者：' + escapeHtml(currentUser.department) + '｜' + escapeHtml(currentUser.name) + '<br>' +
+          '規則：同單位每週最多借用 27 小時。只能修改或刪除自己建立的預約。';
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+        initCalendar();
+        await loadReservations();
+
+      } catch (err) {
+        showFatal('載入失敗', err.message || String(err));
+      }
+    }
+
+    /*******************************************************
+     * JSONP API 呼叫
+     *
+     * Apps Script ContentService 不好處理 CORS，
+     * 所以前端使用 JSONP 呼叫 doGet(e)。
+     *******************************************************/
+    function callApi(action, data) {
+      return new Promise(function (resolve, reject) {
+        const callbackName =
+          'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+
+        const params = Object.assign({}, data || {}, {
+          action: action,
+          idToken: AUTH.idToken,
+          callback: callbackName,
+          _ts: Date.now()
+        });
+
+        const url = API_URL + '?' + toQueryString(params);
+
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+
+        const timeout = setTimeout(function () {
+          cleanup();
+          reject(new Error('API 呼叫逾時，請稍後再試'));
+        }, 30000);
+
+        window[callbackName] = function (response) {
+          cleanup();
+          resolve(response);
+        };
+
+        script.onerror = function () {
+          cleanup();
+          reject(new Error('API 連線失敗，請確認 Apps Script Web App URL 與部署權限'));
+        };
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+
+          if (script && script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        }
+
+        document.body.appendChild(script);
+      });
+    }
+
+    function toQueryString(obj) {
+      return Object.keys(obj)
+        .filter(function (key) {
+          return obj[key] !== undefined && obj[key] !== null;
+        })
+        .map(function (key) {
+          return encodeURIComponent(key) + '=' + encodeURIComponent(String(obj[key]));
+        })
+        .join('&');
+    }
+
+    /*******************************************************
+     * FullCalendar
+     *******************************************************/
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        locale: 'zh-tw',
+        timeZone: 'local',
+        nowIndicator: true,
+        selectable: true,
+        editable: false,
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+          today: '今天',
+          month: '月',
+          week: '週',
+          day: '日'
+        },
+        select: function (info) {
+          resetForm(false);
+          document.getElementById('startTime').value = toInputDateTime(info.start);
+          document.getElementById('endTime').value = toInputDateTime(info.end);
+          showNotice('', '');
+        },
+        eventClick: function (info) {
+          const eventId = info.event.id;
+          const item = reservations.find(function (r) {
+            return r.eventId === eventId;
+          });
+
+          if (!item) return;
+
+          document.getElementById('eventId').value = item.eventId;
+          document.getElementById('startTime').value = item.start.slice(0, 16);
+          document.getElementById('endTime').value = item.end.slice(0, 16);
+          document.getElementById('purpose').value = item.purpose || '';
+          document.getElementById('formTitle').innerText = item.editable ? '修改預約' : '查看預約';
+
+          document.getElementById('selectedInfo').style.display = 'block';
+          document.getElementById('selectedInfo').innerText =
+            '單位：' + item.department + '\n' +
+            '借用人員：' + item.userName + '\n' +
+            '借用目的：' + item.purpose + '\n' +
+            '時數：' + Number(item.durationHours).toFixed(1) + ' 小時';
+
+          document.getElementById('saveBtn').style.display = item.editable ? 'block' : 'none';
+          document.getElementById('deleteBtn').style.display = item.editable ? 'block' : 'none';
+
+          if (!item.editable) {
+            showNotice('這不是你建立的預約，只能查看，不能修改或刪除。', 'err');
+          } else {
+            showNotice('', '');
+          }
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      calendar.render();
+    }
+
+    async function loadReservations() {
+      try {
+        setBusy(true);
+
+        const response = await callApi('listReservations', {});
+        if (!response.ok) {
+          throw new Error(response.error || '讀取預約失敗');
+        }
+
+        reservations = response.reservations || [];
+
+        calendar.removeAllEvents();
+
+        reservations.forEach(function (item) {
+          calendar.addEvent({
+            id: item.eventId,
+            title: item.title,
+            start: item.start,
+            end: item.end,
+            editable: false
+          });
+        });
+
+      } catch (err) {
+        showNotice(err.message || String(err), 'err');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    /*******************************************************
+     * 新增 / 修改 / 刪除
+     *******************************************************/
+    async function saveReservation() {
+      const eventId = document.getElementById('eventId').value;
+
+      const payload = {
+        eventId: eventId,
+        startTime: document.getElementById('startTime').value,
+        endTime: document.getElementById('endTime').value,
+        purpose: document.getElementById('purpose').value
+      };
+
+      if (!payload.startTime || !payload.endTime || !payload.purpose.trim()) {
+        showNotice('請填寫開始時間、結束時間與借用目的。', 'err');
+        return;
+      }
+
+      try {
+        setBusy(true);
+
+        const action = eventId ? 'updateReservation' : 'createReservation';
+        const response = await callApi(action, payload);
+
+        if (!response.ok) {
+          throw new Error(response.error || '儲存失敗');
+        }
+
+        showNotice(response.message || '儲存成功', 'ok');
+        resetForm(false);
+        await loadReservations();
+
+      } catch (err) {
+        showNotice(err.message || String(err), 'err');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function deleteReservation() {
+      const eventId = document.getElementById('eventId').value;
+
+      if (!eventId) {
+        showNotice('尚未選擇預約。', 'err');
+        return;
+      }
+
+      if (!confirm('確定要刪除此預約嗎？')) {
+        return;
+      }
+
+      try {
+        setBusy(true);
+
+        const response = await callApi('deleteReservation', {
+          eventId: eventId
+        });
+
+        if (!response.ok) {
+          throw new Error(response.error || '刪除失敗');
+        }
+
+        showNotice(response.message || '刪除成功', 'ok');
+        resetForm(false);
+        await loadReservations();
+
+      } catch (err) {
+        showNotice(err.message || String(err), 'err');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    /*******************************************************
+     * UI helpers
+     *******************************************************/
+    function resetForm(clearNotice = true) {
+      document.getElementById('eventId').value = '';
+      document.getElementById('startTime').value = '';
+      document.getElementById('endTime').value = '';
+      document.getElementById('purpose').value = '';
+      document.getElementById('formTitle').innerText = '新增預約';
+      document.getElementById('saveBtn').style.display = 'block';
+      document.getElementById('deleteBtn').style.display = 'none';
+      document.getElementById('selectedInfo').style.display = 'none';
+
+      if (clearNotice) {
+        showNotice('', '');
+      }
+    }
+
+    function showNotice(message, type) {
+      const el = document.getElementById('notice');
+
+      el.className = 'notice';
+
+      if (!message) {
+        el.style.display = 'none';
+        el.innerText = '';
+        return;
+      }
+
+      el.innerText = message;
+      el.classList.add(type === 'ok' ? 'ok' : 'err');
+    }
+
+    function showFatal(title, message) {
+      document.getElementById('app').innerHTML =
+        '<div class="card">' +
+          '<h1>' + escapeHtml(title) + '</h1>' +
+          '<div class="muted">' + escapeHtml(message) + '</div>' +
+        '</div>';
+    }
+
+    function debugLoading(message) {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.innerText = message;
+      }
+      console.log(message);
+    }
+
+    function setBusy(isBusy) {
+      const saveBtn = document.getElementById('saveBtn');
+      const deleteBtn = document.getElementById('deleteBtn');
+
+      if (saveBtn) saveBtn.disabled = isBusy;
+      if (deleteBtn) deleteBtn.disabled = isBusy;
+    }
+
+    function toInputDateTime(date) {
+      const pad = function (n) {
+        return String(n).padStart(2, '0');
+      };
+
+      return date.getFullYear() + '-' +
+        pad(date.getMonth() + 1) + '-' +
+        pad(date.getDate()) + 'T' +
+        pad(date.getHours()) + ':' +
+        pad(date.getMinutes());
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
