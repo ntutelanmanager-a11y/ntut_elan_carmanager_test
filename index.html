@@ -293,7 +293,7 @@
      * Global state
      *******************************************************/
     const AUTH = {
-      idToken: ''
+      accessToken: ''
     };
 
     let calendar;
@@ -328,13 +328,13 @@
           return;
         }
 
-        const idToken = liff.getIDToken();
+        const accessToken = liff.getAccessToken();
 
-        if (!idToken) {
-          throw new Error('無法取得 LINE idToken。請確認 LIFF Scope 有勾選 openid 與 profile。');
+        if (!accessToken) {
+          throw new Error('無法取得 LINE accessToken。請確認 LIFF Scope 有勾選 profile。');
         }
-
-        AUTH.idToken = idToken;
+        
+        AUTH.accessToken = accessToken;
 
         debugLoading('正在驗證使用者權限...');
 
@@ -374,15 +374,15 @@
         const params = Object.assign({}, data || {}, {
           action: action,
           callback: callbackName,
-          idToken: AUTH.idToken,
+          idToken: AUTH.accessToken,
           _ts: Date.now()
         });
     
         const url = API_URL + '?' + toQueryString(params);
     
         console.log('callApi action:', action);
-        console.log('AUTH.idToken exists:', !!AUTH.idToken);
-        console.log('AUTH.idToken length:', AUTH.idToken ? AUTH.idToken.length : 0);
+        console.log('AUTH.idToken exists:', !!AUTH.accessToken);
+        console.log('AUTH.idToken length:', AUTH.accessToken ? AUTH.accessToken.length : 0);
         console.log('JSONP URL:', url);
     
         const script = document.createElement('script');
