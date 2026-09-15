@@ -426,52 +426,7 @@
         document.body.appendChild(script);
       });
     }
-    // function callApi(action, data) {
-    //   return new Promise(function (resolve, reject) {
-    //     const callbackName =
-    //       'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-
-    //     const params = Object.assign({}, data || {}, {
-    //       action: action,
-    //       idToken: AUTH.idToken,
-    //       callback: callbackName,
-    //       _ts: Date.now()
-    //     });
-
-    //     const url = API_URL + '?' + toQueryString(params);
-
-    //     const script = document.createElement('script');
-    //     script.src = url;
-    //     script.async = true;
-
-    //     const timeout = setTimeout(function () {
-    //       cleanup();
-    //       reject(new Error('API 呼叫逾時，請稍後再試'));
-    //     }, 30000);
-
-    //     window[callbackName] = function (response) {
-    //       cleanup();
-    //       resolve(response);
-    //     };
-
-    //     script.onerror = function () {
-    //       cleanup();
-    //       reject(new Error('API 連線失敗，請確認 Apps Script Web App URL 與部署權限'));
-    //     };
-
-    //     function cleanup() {
-    //       clearTimeout(timeout);
-    //       delete window[callbackName];
-
-    //       if (script && script.parentNode) {
-    //         script.parentNode.removeChild(script);
-    //       }
-    //     }
-
-    //     document.body.appendChild(script);
-    //   });
-    // }
-
+    
     function toQueryString(obj) {
       return Object.keys(obj)
         .filter(function (key) {
