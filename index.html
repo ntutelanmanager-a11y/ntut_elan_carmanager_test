@@ -8,7 +8,6 @@
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-  <div class="small">版本：2026-09-15 accessToken v2</div>
   <style>
     :root {
       --bg: #f5f5f5;
@@ -336,11 +335,25 @@
         
         AUTH.accessToken = accessToken;
 
-        debugLoading('正在驗證使用者權限...');
-
+        debugLoading('正在測試 API 連線...');
+        
+        const pingResponse = await callApi('ping', {});
+        
+        if (!pingResponse || !pingResponse.ok) {
+          throw new Error(
+            (pingResponse && (pingResponse.message || pingResponse.error)) ||
+            'API ping 失敗'
+          );
+        }
+        
+        debugLoading('API 連線正常，正在驗證使用者權限...');
+        
         const userResponse = await callApi('getCurrentUser', {});
         if (!userResponse.ok) {
-          throw new Error(userResponse.error || '使用者驗證失敗');
+          Error(
+                  (userResponse && (userResponse.message || userResponse.error)) ||
+                  '使用者驗證失敗'
+                );
         }
         debugLoading('驗證成功');
         currentUser = userResponse.user;
@@ -411,7 +424,11 @@
           console.error(event);
     
           cleanup();
-          reject(new Error('API 連線失敗，請確認 Apps Script Web App URL 與部署權限'));
+         reject(new Error(
+            'API 連線失敗。\n' +
+            '可能原因：Apps Script Web App URL 錯誤、部署版本錯誤、權限不是 Anyone、或 Apps Script 回傳 404。\n\n' +
+            '請複製 Console 的 Failed URL 到瀏覽器測試。'
+          ));
         };
     
         function cleanup() {
@@ -512,7 +529,7 @@
 
         const response = await callApi('listReservations', {});
         if (!response.ok) {
-          throw new Error(response.error || '讀取預約失敗');
+           throw new Error(response.message || response.error || '讀取預約失敗');
         }
 
         reservations = response.reservations || [];
@@ -561,7 +578,7 @@
         const response = await callApi(action, payload);
 
         if (!response.ok) {
-          throw new Error(response.error || '儲存失敗');
+          throw new Error(response.message || response.error || '儲存失敗');
         }
 
         showNotice(response.message || '儲存成功', 'ok');
@@ -595,7 +612,7 @@
         });
 
         if (!response.ok) {
-          throw new Error(response.error || '刪除失敗');
+           throw new Error(response.message || response.error || '刪除失敗');
         }
 
         showNotice(response.message || '刪除成功', 'ok');
