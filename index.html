@@ -381,8 +381,8 @@
         const url = API_URL + '?' + toQueryString(params);
     
         console.log('callApi action:', action);
-        console.log('AUTH.idToken exists:', !!AUTH.accessToken);
-        console.log('AUTH.idToken length:', AUTH.accessToken ? AUTH.accessToken.length : 0);
+        console.log('AUTH.accessToken exists:', !!AUTH.accessToken);
+        console.log('AUTH.accessToken length:', AUTH.accessToken ? AUTH.accessToken.length : 0);
         console.log('JSONP URL:', url);
     
         const script = document.createElement('script');
