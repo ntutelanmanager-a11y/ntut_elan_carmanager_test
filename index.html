@@ -364,98 +364,98 @@
      * Apps Script ContentService 不好處理 CORS，
      * 所以前端使用 JSONP 呼叫 doGet(e)。
      *******************************************************/
-    function callApi(action, data) {
-      return new Promise((resolve, reject) => {
-        const callbackName =
-          'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-    
-        window[callbackName] = function(response) {
-          console.log('API response:', response);
-    
-          delete window[callbackName];
-          script.remove();
-    
-          if (response && response.ok) {
-            resolve(response);
-          } else {
-            reject(new Error(
-              (response && (response.message || response.error)) ||
-              'API error'
-            ));
-          }
-        };
-    
-        const payload = Object.assign({}, data || {}, {
-          action: action,
-          idToken: idToken,
-          callback: callbackName
-        });
-    
-        const params = new URLSearchParams(payload);
-        const url = API_URL + '?' + params.toString();
-    
-        console.log('API URL:', url);
-    
-        const script = document.createElement('script');
-        script.src = url;
-    
-        script.onerror = function() {
-          console.error('JSONP script load failed:', url);
-    
-          delete window[callbackName];
-          script.remove();
-    
-          reject(new Error('無法連線到 Apps Script API'));
-        };
-    
-        document.body.appendChild(script);
-      });
-    }
     // function callApi(action, data) {
-    //   return new Promise(function (resolve, reject) {
+    //   return new Promise((resolve, reject) => {
     //     const callbackName =
     //       'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-
-    //     const params = Object.assign({}, data || {}, {
+    
+    //     window[callbackName] = function(response) {
+    //       console.log('API response:', response);
+    
+    //       delete window[callbackName];
+    //       script.remove();
+    
+    //       if (response && response.ok) {
+    //         resolve(response);
+    //       } else {
+    //         reject(new Error(
+    //           (response && (response.message || response.error)) ||
+    //           'API error'
+    //         ));
+    //       }
+    //     };
+    
+    //     const payload = Object.assign({}, data || {}, {
     //       action: action,
-    //       idToken: AUTH.idToken,
-    //       callback: callbackName,
-    //       _ts: Date.now()
+    //       idToken: idToken,
+    //       callback: callbackName
     //     });
-
-    //     const url = API_URL + '?' + toQueryString(params);
-
+    
+    //     const params = new URLSearchParams(payload);
+    //     const url = API_URL + '?' + params.toString();
+    
+    //     console.log('API URL:', url);
+    
     //     const script = document.createElement('script');
     //     script.src = url;
-    //     script.async = true;
-
-    //     const timeout = setTimeout(function () {
-    //       cleanup();
-    //       reject(new Error('API 呼叫逾時，請稍後再試'));
-    //     }, 30000);
-
-    //     window[callbackName] = function (response) {
-    //       cleanup();
-    //       resolve(response);
-    //     };
-
-    //     script.onerror = function () {
-    //       cleanup();
-    //       reject(new Error('API 連線失敗，請確認 Apps Script Web App URL 與部署權限'));
-    //     };
-
-    //     function cleanup() {
-    //       clearTimeout(timeout);
+    
+    //     script.onerror = function() {
+    //       console.error('JSONP script load failed:', url);
+    
     //       delete window[callbackName];
-
-    //       if (script && script.parentNode) {
-    //         script.parentNode.removeChild(script);
-    //       }
-    //     }
-
+    //       script.remove();
+    
+    //       reject(new Error('無法連線到 Apps Script API'));
+    //     };
+    
     //     document.body.appendChild(script);
     //   });
     // }
+    function callApi(action, data) {
+      return new Promise(function (resolve, reject) {
+        const callbackName =
+          'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+
+        const params = Object.assign({}, data || {}, {
+          action: action,
+          idToken: AUTH.idToken,
+          callback: callbackName,
+          _ts: Date.now()
+        });
+
+        const url = API_URL + '?' + toQueryString(params);
+
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+
+        const timeout = setTimeout(function () {
+          cleanup();
+          reject(new Error('API 呼叫逾時，請稍後再試'));
+        }, 30000);
+
+        window[callbackName] = function (response) {
+          cleanup();
+          resolve(response);
+        };
+
+        script.onerror = function () {
+          cleanup();
+          reject(new Error('API 連線失敗，請確認 Apps Script Web App URL 與部署權限'));
+        };
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+
+          if (script && script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        }
+
+        document.body.appendChild(script);
+      });
+    }
 
     function toQueryString(obj) {
       return Object.keys(obj)
