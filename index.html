@@ -340,9 +340,9 @@
         if (!userResponse.ok) {
           throw new Error(userResponse.error || '使用者驗證失敗');
         }
-
+        debugLoading('驗證成功');
         currentUser = userResponse.user;
-
+        debugLoading(escapeHtml(currentUser.name));
         document.getElementById('userInfo').innerHTML =
           '使用者：' + escapeHtml(currentUser.department) + '｜' + escapeHtml(currentUser.name) + '<br>' +
           '規則：同單位每週最多借用 27 小時。只能修改或刪除自己建立的預約。';
